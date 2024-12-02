@@ -1,3 +1,5 @@
+import character
+
 class WorldObject():
     """WorldObject Class"""
 
@@ -30,10 +32,20 @@ class Party(WorldObject):
         contains details on the party, including its creatures, and its AI decision making.
         
         printSelf() - Returns an ascii character to represent the party
+
+        
         """
 
         self.character:str[1] = 'P'
+        self.members:list[character.Character] = []
         
+    def getPartyMembers(self)->list[character.Character]:
+        """Gets list of party members"""
+        return self.members
+    
+    def addPartymember(self,newmember:character.Character):
+        """Add a new character to party"""
+        self.members.append(newmember)
 
 if __name__ == "__main__":
 

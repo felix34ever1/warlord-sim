@@ -85,7 +85,7 @@ class Controller():
                 self.world.removeObject(party,pcoords[0],pcoords[1])
                 party.updateCoordinates(targetcoords[0],targetcoords[1])
 
-                
+            
 
     def printWorld(self):
         """Prints the world"""
