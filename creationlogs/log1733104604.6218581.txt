@@ -1,0 +1,13 @@
+|Terrain Gen|
+|Terrain Gen Complete|
+|Faction Gen|
+|Faction Gen Complete|
+|Year 0|
+|History Generated|
+|Party Gen|
+Attempting to place new party at (0,24)- Succeeded
+Attempting to place new party at (11,13)- Succeeded
+Attempting to place new party at (13,14)- Succeeded
+Attempting to place new party at (22,3)- Succeeded
+Attempting to place new party at (0,17)- Succeeded
+|Party Gen Complete|
