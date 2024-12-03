@@ -15,6 +15,7 @@ class CombatHandler():
         printSelf() - Return a string printing the current display of the battle.
 
         """
+        self.combatlog = ""
 
         self.parties = parties
 
@@ -29,6 +30,7 @@ class CombatHandler():
         # For party, deploy them on one side of the battlefield, currently allows side 1 on the left and side 2 on the right
         side = 0 
         for party in parties:
+            self.combatlog += f"Party {side+1}\n"
             characters = party.getPartyMembers()
             increment = 0 
             for _character in characters:
@@ -60,6 +62,7 @@ class CombatHandler():
         # Go through units and let each unit do a turn.
         while len(ordered_units)!=0:
             cur_unit = ordered_units.pop(0)
+            self.combatlog += f"{cur_unit.getName()}'s turn "
             enemy_units:list[character.Character] = []
             # Figure out all enemy units by going through party and getting all hostile parties in one list
             for _party in self.parties:
@@ -83,12 +86,54 @@ class CombatHandler():
             if closest_enemy!= None:
                 if shortest_distance == 1:
                     # Combat
-                    pass
+                    self.combatlog+=f" ATK {closest_enemy.getName()}\n-"
+                    self.attackMelee(cur_unit,closest_enemy)
+                    if closest_enemy.getHP() <= 0:
+                        self.killUnit(closest_enemy)
+                        if closest_enemy in ordered_units:
+                            ordered_units.remove(closest_enemy)
                 else:
                     # Pathfind
                     pathfind_nodes = self.pathfind(c_x,c_y,e_x,e_y,list())
-                    next_node = pathfind_nodes[0]
-                    self.moveCharacterTo(cur_unit,next_node)
+                    if len(pathfind_nodes) != 0:
+                        next_node = pathfind_nodes[0]
+                        self.moveCharacterTo(cur_unit,next_node)
+                        self.combatlog+=f" --> ({next_node[0]},{next_node[1]})\n"
+                    else:
+                        pass
+
+    def killUnit(self, char:character.Character):
+        """Removes a unit from the map and also the party it was in.
+
+        Args:
+            char (character.Character): Character that is going to die
+        """
+
+        ch_x,ch_y = char.getCoords()
+        self.combat_grid[ch_x][ch_y].remove(char)
+
+        for _party in self.parties:
+            if char in _party.getPartyMembers():
+                _party.getPartyMembers().remove(char)
+
+    def attackMelee(self, char:character.Character, enemy:character.Character):
+        """Uses the char to attack the enemy, by running to hit numbers and comparing the two then applying damage to the enemy.
+
+        Args:
+            char (character.Character): Character who is performing the attack
+            enemy (character.Character): Character who is being attacked
+        """
+
+        to_hit = char.meleeAttack()
+        evasion = enemy.getEvasion()
+        self.combatlog+=f"TO HIT: {to_hit} VS {evasion} EVASION"
+        if to_hit > evasion:
+            dmg = char.calculateDamage()
+            resist = enemy.takeDamage(dmg)
+            self.combatlog+=f", Success, {dmg} DMG, {resist} RESISTED"
+        else:
+            self.combatlog+=f" Failed"
+        self.combatlog+=f"\n"
 
     def moveCharacterTo(self, char:character.Character, targetcoords:tuple[int]):
         """Attempts to move character to target coords, if they are already occupied, it will instead fail, leaving the character at their original position.
@@ -184,23 +229,29 @@ class CombatHandler():
             txt+="\n"
         return txt
     
+    def getLog(self)->str:
+        """Return combat log"""
+        return self.combatlog
 
 if __name__ == "__main__":
     p1 = party.Party()
-    p1.addPartymember(character.Character())
-    p1.addPartymember(character.Character())
-    p1.addPartymember(character.Character())
+    for i in range(20):
+        chr = character.Character()
+        chr.displaychar = ">"
+        p1.addPartymember(chr)
+    
     p2 = party.Party()
-    p2.addPartymember(character.Character())
-    p2.addPartymember(character.Character())
-    p2.addPartymember(character.Character())
+    for i in range(20):
+        p2.addPartymember(character.Character())
 
     ch = CombatHandler(p1,p2)
     print(ch.printSelf())
     p1coords = p1.getPartyMembers()[0].getCoords()
     p2coords = p2.getPartyMembers()[0].getCoords()
 
-    for _ in range (10):
+    for _ in range (60):
         print(ch.processTurn())
         print(ch.printSelf())
-        time.sleep(0.5)
+        time.sleep(0.2)
+
+    print(ch.getLog())
