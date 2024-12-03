@@ -17,6 +17,7 @@ class Character():
         self.dexterity = 5
         self.weapons:list = []
         self.displaychar:str = "C"
+        self.colorpairID = 0
 
         # Get random name in character list
         with open("names.txt","r") as f:
@@ -32,6 +33,12 @@ class Character():
     def setCoords(self,x:int,y:int):
         self.x = x
         self.y = y
+
+    def getcolorpairID(self)->int:
+        return self.colorpairID
+
+    def setcolorpairID(self,newID:int):
+        self.colorpairID = newID
         
     def meleeAttack(self)->int:
         """Returns a number to hit in melee"""

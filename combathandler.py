@@ -2,6 +2,7 @@ import party
 import character
 import math
 import time
+import curses
 from random import randint
 class CombatHandler():
     """CombatHandler Class"""
@@ -12,8 +13,18 @@ class CombatHandler():
             Creates a 2d grid and deploys both sides' soldiers on either side, then they can fight it out.
         
         processTurn() - Let both sides fight, calculating initiative and then let each unit in order perform its turn.
+        
         printSelf() - Return a string printing the current display of the battle.
 
+        doCombat() - Runs combat between parties until one party is wiped out, using processTurn and printSelf to display the board.
+
+        moveCharacterTo() - Moves character to a position, given
+
+        pathfind()
+
+        attackMelee()
+
+        killUnit()
         """
         self.combatlog = ""
 
@@ -42,6 +53,22 @@ class CombatHandler():
                     self.combat_grid[19-increment//9][increment%9].append(_character)
                 increment+=1
             side+=1
+
+    def doCombat(self,stdscr:curses.window):
+        """ Runs a combat until one side has lost (NOTE or in the future retreated)"""
+        combat_over = False
+        while not combat_over:
+            for _party in self.parties:
+                if len(_party.getPartyMembers()) == 0:
+                    combat_over = True
+        
+            stdscr.clear()
+            self.processTurn()
+            self.printSelf(stdscr)
+            time.sleep(0.2)
+            stdscr.refresh()
+        return self.getLog()
+
 
     def processTurn(self):
         """Handles the turn of units, calculating initative, then letting units do their turn.
@@ -175,7 +202,7 @@ class CombatHandler():
             return(list())
 
 
-        # Get all possible movement tiles around the start position, adding them to a list, making sure they haven't already been visited.
+        # Get all possible movement tiles around the start position, adding them to a list, making sure they haven't already been visited or that they aren't occupied.
         possible_moves = []
         if start_x>0:
             if len(self.combat_grid[start_x-1][start_y])==0 and not (start_x-1,start_y) in visited_coords:
@@ -214,26 +241,28 @@ class CombatHandler():
                 while len(nextpath) != 0:
                     path.append(nextpath.pop(0))
                 return path
-    def printSelf(self)->str:
-        """Returns the string displaying an image of the battlefield. 
+
+
+    def printSelf(self,stdscr:curses.window)->str:
+        """uses curses to display image of the battlefield. 
         """
         txt = ""
         for j in range(10):
+            stdscr.move(j,0)
             for i in range(20):
                 if len(self.combat_grid[i][j]) == 0:
-                    txt+="."
+                    stdscr.addch(".")
                 elif len(self.combat_grid[i][j]) == 1:
-                    txt+=self.combat_grid[i][j][0].printSelf()
+                    stdscr.addch(self.combat_grid[i][j][0].printSelf(),curses.color_pair(self.combat_grid[i][j][0].getcolorpairID()))
                 else: # If more than 1 character:
-                    txt+="+"
-            txt+="\n"
+                    stdscr.addch("+")
         return txt
     
     def getLog(self)->str:
         """Return combat log"""
         return self.combatlog
 
-if __name__ == "__main__":
+def main(stdscr:curses.window):
     p1 = party.Party()
     for i in range(20):
         chr = character.Character()
@@ -245,13 +274,19 @@ if __name__ == "__main__":
         p2.addPartymember(character.Character())
 
     ch = CombatHandler(p1,p2)
-    print(ch.printSelf())
+    stdscr.clear()
+    print(ch.printSelf(stdscr))
     p1coords = p1.getPartyMembers()[0].getCoords()
     p2coords = p2.getPartyMembers()[0].getCoords()
-
+    stdscr.refresh
     for _ in range (60):
+        stdscr.clear()
         print(ch.processTurn())
-        print(ch.printSelf())
+        print(ch.printSelf(stdscr))
         time.sleep(0.2)
+        stdscr.refresh()
 
     print(ch.getLog())
+
+if __name__ == "__main__":
+    curses.wrapper(main)

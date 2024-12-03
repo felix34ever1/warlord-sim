@@ -1,4 +1,6 @@
 import character
+import curses
+from random import randint
 
 class WorldObject():
     """WorldObject Class"""
@@ -13,9 +15,22 @@ class WorldObject():
         self.character:str[1] = 'O'
         self.x:int = 0
         self.y:int = 0
-        
+        self.path:list[tuple[int]] = list()
+        self.colours:list[int] = [curses.COLOR_BLACK,curses.COLOR_BLUE,curses.COLOR_CYAN,curses.COLOR_GREEN,curses.COLOR_MAGENTA,curses.COLOR_WHITE,curses.COLOR_RED,curses.COLOR_YELLOW]
+        self.colors = (self.colours.pop(randint(0,len(self.colours)-1)),self.colours.pop(randint(0,len(self.colours)-1)))
+        self.colorpairID = 0
+
     def printSelf(self):
         return self.character
+    
+    def getColourPair(self):
+        return self.colors
+    
+    def setcolorpairID(self,newID:int):
+        self.colorpairID = newID
+
+    def getcolorpairID(self)->int:
+        return self.colorpairID
 
     def getCoordinates(self)->list[int]:
         return (self.x,self.y)
@@ -23,6 +38,12 @@ class WorldObject():
     def updateCoordinates(self,x:int,y:int):
         self.x = x
         self.y = y
+
+    def getPath(self)->list[tuple[int]]:
+        return self.path
+    
+    def setPath(self,path:list[tuple[int]]):
+        self.path = path
 
 class Party(WorldObject):
     """Party Class"""
@@ -35,7 +56,8 @@ class Party(WorldObject):
 
         
         """
-
+        
+        super().__init__()
         self.character:str[1] = 'P'
         self.members:list[character.Character] = []
         
@@ -51,3 +73,4 @@ if __name__ == "__main__":
 
     p = Party()
     print(p.printSelf())
+    print(p.getPath())
