@@ -147,18 +147,29 @@ class Controller():
 
 
 def main(stdscr:curses.window):
+    curses.cbreak(True)
     c = Controller(10)
     c.generateWorld()
     stdscr.clear()
     c.printWorld(stdscr)
     stdscr.refresh()
     stdscr.getch()
-    for i in range(100):
+    for i in range(12):
         stdscr.clear()
         c.advanceWorldTime(stdscr)
         c.printWorld(stdscr)
         time.sleep(0.5) 
         stdscr.refresh()
+        if len(c.parties) == 0:
+            break
 
+
+    stdscr.clear()
+    stdscr.addstr("SIMULATION OVER! X to quit")
+    stdscr.refresh()
+    char:str = str(stdscr.getch())
+    curses.endwin()
+
+    
 if __name__ == "__main__":
     wrapper(main)

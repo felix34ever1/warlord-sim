@@ -27,6 +27,9 @@ class CombatHandler():
         killUnit()
         """
         self.combatlog = ""
+        self.roundlog = ""
+
+        self.animation_mode = False
 
         self.parties = parties
 
@@ -65,9 +68,35 @@ class CombatHandler():
             stdscr.clear()
             self.processTurn()
             self.printSelf(stdscr)
+
+            # Read roundlog to cmd
+            with open("roundlog.txt","w") as f:
+                f.write(self.roundlog)
+            with open("roundlog.txt","r") as f:
+                text = f.readlines()
+                i=0
+                for line in text:
+                    if i < stdscr.getmaxyx()[0]:
+                        stdscr.move(i,20)
+                        line = line.removesuffix("\n")
+                        stdscr.addstr(line)
+                    i+=1
             time.sleep(0.2)
+            # add roundlog to combatlog and clear it
+            self.combatlog+=self.roundlog
+            self.roundlog = ""
             stdscr.refresh()
-        return self.getLog()
+            
+            # Wait for user if not in animation mode
+            if self.animation_mode:
+                pass
+            else:
+                key = stdscr.getkey()
+                if key == "a":
+                    self.animation_mode = True
+
+        stdscr.clear()
+        stdscr.refresh()
 
 
     def processTurn(self):
@@ -89,7 +118,7 @@ class CombatHandler():
         # Go through units and let each unit do a turn.
         while len(ordered_units)!=0:
             cur_unit = ordered_units.pop(0)
-            self.combatlog += f"{cur_unit.getName()}'s turn "
+            self.roundlog += f"{cur_unit.getName()}'s turn "
             enemy_units:list[character.Character] = []
             # Figure out all enemy units by going through party and getting all hostile parties in one list
             for _party in self.parties:
@@ -113,7 +142,7 @@ class CombatHandler():
             if closest_enemy!= None:
                 if shortest_distance == 1:
                     # Combat
-                    self.combatlog+=f" ATK {closest_enemy.getName()}\n-"
+                    self.roundlog+=f" ATK {closest_enemy.getName()}\n-"
                     self.attackMelee(cur_unit,closest_enemy)
                     if closest_enemy.getHP() <= 0:
                         self.killUnit(closest_enemy)
@@ -125,7 +154,7 @@ class CombatHandler():
                     if len(pathfind_nodes) != 0:
                         next_node = pathfind_nodes[0]
                         self.moveCharacterTo(cur_unit,next_node)
-                        self.combatlog+=f" --> ({next_node[0]},{next_node[1]})\n"
+                        self.roundlog+=f" --> ({next_node[0]},{next_node[1]})\n"
                     else:
                         pass
 
@@ -153,14 +182,14 @@ class CombatHandler():
 
         to_hit = char.meleeAttack()
         evasion = enemy.getEvasion()
-        self.combatlog+=f"TO HIT: {to_hit} VS {evasion} EVASION"
+        self.roundlog+=f"TO HIT: {to_hit} VS {evasion} EVASION"
         if to_hit > evasion:
             dmg = char.calculateDamage()
             resist = enemy.takeDamage(dmg)
-            self.combatlog+=f", Success, {dmg} DMG, {resist} RESISTED"
+            self.roundlog+=f", Success, {dmg} DMG, {resist} RESISTED"
         else:
-            self.combatlog+=f" Failed"
-        self.combatlog+=f"\n"
+            self.roundlog+=f" Failed"
+        self.roundlog+=f"\n"
 
     def moveCharacterTo(self, char:character.Character, targetcoords:tuple[int]):
         """Attempts to move character to target coords, if they are already occupied, it will instead fail, leaving the character at their original position.
