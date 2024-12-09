@@ -61,6 +61,7 @@ class CombatHandler():
         """ Runs a combat until one side has lost (NOTE or in the future retreated)"""
         combat_over = False
         while not combat_over:
+            # Checks first if any parties have 0 members, meaning the combat would be over
             for _party in self.parties:
                 if len(_party.getPartyMembers()) == 0:
                     combat_over = True
@@ -116,40 +117,35 @@ class CombatHandler():
             ordered_units.append(all_units.pop(randint(0,len(all_units)-1)))
 
         # Go through units and let each unit do a turn.
-        while len(ordered_units)!=0:
-            cur_unit = ordered_units.pop(0)
+        
+        # Units all start by moving, this is handled in below method, though it also currently does combat
+        self.movementPhase(ordered_units.copy())
+    
+    def movementPhase(self,unit_queue:list[character.Character]):
+        # Go through units and let each unit do a turn.
+        while len(unit_queue)!=0:
+            cur_unit = unit_queue.pop(0)
             self.roundlog += f"{cur_unit.getName()}'s turn "
-            enemy_units:list[character.Character] = []
             # Figure out all enemy units by going through party and getting all hostile parties in one list
-            for _party in self.parties:
-                if cur_unit in _party.getPartyMembers():
-                    pass
-                else:
-                    enemy_units.extend(_party.getPartyMembers())
+            enemy_units:list[character.Character] = self.getEnemyUnits(cur_unit)
 
-            shortest_distance = 9999
             # Use manhattan distance heuristic to pick closest unit to path to.
-            closest_enemy = None
-            for enemy_unit in enemy_units:
-                c_x,c_y = cur_unit.getCoords()
-                e_x,e_y = enemy_unit.getCoords()
-                m_distance = abs(e_x-c_x)+abs(e_y-c_y)
-                if m_distance<shortest_distance:
-                    shortest_distance = m_distance
-                    closest_enemy = enemy_unit
+            closest_enemy = self.getClosestEnemyManhattan(cur_unit,enemy_units)
             
             # If enemies left, move toward them by pathfinding or fight if next to eachother.
             if closest_enemy!= None:
-                if shortest_distance == 1:
+                if cur_unit.mDistanceToCharacter(closest_enemy) == 1:
                     # Combat
                     self.roundlog+=f" ATK {closest_enemy.getName()}\n-"
                     self.attackMelee(cur_unit,closest_enemy)
                     if closest_enemy.getHP() <= 0:
                         self.killUnit(closest_enemy)
-                        if closest_enemy in ordered_units:
-                            ordered_units.remove(closest_enemy)
+                        if closest_enemy in unit_queue:
+                            unit_queue.remove(closest_enemy)
                 else:
                     # Pathfind
+                    c_x,c_y = cur_unit.getCoords()
+                    e_x,e_y = closest_enemy.getCoords()
                     pathfind_nodes = self.pathfind(c_x,c_y,e_x,e_y,list())
                     if len(pathfind_nodes) != 0:
                         next_node = pathfind_nodes[0]
@@ -157,6 +153,34 @@ class CombatHandler():
                         self.roundlog+=f" --> ({next_node[0]},{next_node[1]})\n"
                     else:
                         pass
+
+    def getEnemyUnits(self,unit:character.Character)->list[party.Party]:
+        """ Gets a list of the units that are opposed to the given unit and return"""
+        enemy_units:list[character.Character] = []
+        for _party in self.parties:
+            if unit in _party.getPartyMembers():
+                pass
+            else:
+                enemy_units.extend(_party.getPartyMembers())
+
+        return enemy_units
+
+    def getClosestEnemyManhattan(self,unit:character.Character,enemy_list:list[character.Character])->character.Character:
+        shortest_distance = 9999
+        # Use manhattan distance heuristic to pick closest unit to path to.
+        closest_enemy = None
+        for enemy_unit in enemy_list:
+            m_distance = unit.mDistanceToCharacter(enemy_unit)
+            if m_distance<shortest_distance:
+                shortest_distance = m_distance
+                closest_enemy = enemy_unit
+
+        return closest_enemy
+
+    def manhattanDistance(x1:int,y1:int,x2:int,y2:int)->int:
+        """ Calculates manhattan distance between two points and returns it"""
+        m_distance = abs(x1-x2)+abs(y1-y2)
+
 
     def killUnit(self, char:character.Character):
         """Removes a unit from the map and also the party it was in.

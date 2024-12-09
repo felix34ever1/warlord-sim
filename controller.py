@@ -42,7 +42,21 @@ class Controller():
         txtlog+="|History Generated|\n"
         # Generate parties - At the end, generate neutral parties and set them loose to interact with the world. 
         txtlog+="|Party Gen|\n"
+        txtlog+=self.generatyParties()
+        txtlog+="- Succeeded\n"
 
+
+        date = time.time()
+        with open(f"creationlogs\log{date}.txt","w") as logfile:
+            logfile.write(txtlog)
+
+    def generatyParties(self)->str:
+        """Generates parties on the world, making sure they aren't placed on top of eachother.
+
+        Returns:
+            str: Returns the textlog used for 
+        """
+        txtlog = ""
         # Generates up to 5 parties by choosing random location and checking if anything is there in the world.
         for _ in range(5):
             x = randint(0,self.size-1)
@@ -70,72 +84,69 @@ class Controller():
                     newsoldier.setcolorpairID(newparty.getcolorpairID())
                     newparty.addPartymember(newsoldier)
                     
+        return txtlog
 
-                txtlog+="- Succeeded\n"
 
         txtlog+="|Party Gen Complete|\n"
-
-        date = time.time()
-        with open(f"creationlogs\log{date}.txt","w") as logfile:
-            logfile.write(txtlog)
-            
+    
     def advanceWorldTime(self,stdscr:curses.window):
         """Goes through each faction and party and allows for them to act. 
         TODO Currently moves party on its own, but in future should give the party pathfinding ability.
         """
         for party in self.parties:
-            # Randomly pick a direction and move party there. 
-#            dcoords = [0,0]
-#            direction = randint(0,3)
-#            if direction == 0:
-#                dcoords = [1,0]
-#            elif direction == 1:
-#                dcoords = [0,1]
-#            elif direction == 2:
-#                dcoords = [-1,0]
-#            elif direction == 3:
-#                dcoords = [0,-1]
-            
-            # Check if party has path, if not generate one.
-            pcoords = party.getCoordinates()
-            if len(party.getPath()) == 0:
-                # Pick a target 
-                for _opp_party in self.parties:
-                    if _opp_party != party:
-                        break
-                _opp_coords = _opp_party.getCoordinates()
-                new_path = self.world.pathfindOnce(pcoords[0],pcoords[1],_opp_coords[0],_opp_coords[1],list())
-                party.setPath(new_path)
+            self.moveParty(party)
+            self.checkForConflict(party,stdscr)
 
-            if len(party.getPath()) != 0:
-                # Pathfind towards enemy
-                targetcoords = party.getPath().pop(0)
-                if targetcoords[0] >= self.size or targetcoords[0] < 0 or targetcoords[1] >= self.size or targetcoords[1] < 0:
-                    continue # Skips movement as failed to move in that direction, edge of world
-                else:
-                    self.world.addObject(party,targetcoords[0],targetcoords[1])
-                    self.world.removeObject(party,pcoords[0],pcoords[1])
-                    party.updateCoordinates(targetcoords[0],targetcoords[1])
-            else:
-                # Shares a space with target faction, attack!
-                if len(self.world.getObjects(pcoords[0],pcoords[1]))>1:
-                    parties = self.world.getObjects(pcoords[0],pcoords[1])
-                    combat = CombatHandler(parties[0],parties[1])
-                    combat.doCombat()
-                else:
-                    # Only ONE party left
+    def moveParty(self,party:Party):
+        """Attempts to pathfind and move party, if at target location, will initiate a fight. 
+        NOTE at some point combat handling should be moved completely to a different step of the advanceWorldTime function
+
+        Args:
+            party (Party): party currently attempting to move in the world.
+
+        """
+        # Check if party has path, if not generate one.
+        pcoords = party.getCoordinates()
+        if len(party.getPath()) == 0:
+            # Pick a target 
+            for _opp_party in self.parties:
+                if _opp_party != party:
                     break
+            _opp_coords = _opp_party.getCoordinates()
+            new_path = self.world.pathfindOnce(pcoords[0],pcoords[1],_opp_coords[0],_opp_coords[1],list())
+            party.setPath(new_path)
 
-            if len(self.world.getObjects(party.getCoordinates()[0],party.getCoordinates()[1]))>1:
-                # If shares a space with another party, HAVE A FIGHT!
-                parties:list[Party] = self.world.getObjects(party.getCoordinates()[0],party.getCoordinates()[1])
+        if len(party.getPath()) != 0:
+            # Pathfind towards enemy
+            targetcoords = party.getPath().pop(0)
+            if targetcoords[0] >= self.size or targetcoords[0] < 0 or targetcoords[1] >= self.size or targetcoords[1] < 0:
+                return # Skips movement as failed to move in that direction, edge of world
+            else:
+                self.world.addObject(party,targetcoords[0],targetcoords[1])
+                self.world.removeObject(party,pcoords[0],pcoords[1])
+                party.updateCoordinates(targetcoords[0],targetcoords[1])
+        else:
+            # Shares a space with target faction, attack!
+            if len(self.world.getObjects(pcoords[0],pcoords[1]))>1:
+                parties = self.world.getObjects(pcoords[0],pcoords[1])
                 combat = CombatHandler(parties[0],parties[1])
-                combat.doCombat(stdscr)
-                for _party in parties:
-                    if len(_party.getPartyMembers()) == 0:
-                        self.parties.remove(_party)
-                        self.world.removeObject(_party,_party.getCoordinates()[0],_party.getCoordinates()[1])
+                combat.doCombat()
+            else:
+                # Only ONE party left
+                return
 
+    def checkForConflict(self,party:Party,stdscr:curses.window):
+        """ Checks if a party is occupying a space as any other party, will initiate combat if that is the case."""
+        # Checks if the party has entered another space, in which case they will fight
+        if len(self.world.getObjects(party.getCoordinates()[0],party.getCoordinates()[1]))>1:
+            # If shares a space with another party, HAVE A FIGHT!
+            parties:list[Party] = self.world.getObjects(party.getCoordinates()[0],party.getCoordinates()[1])
+            combat = CombatHandler(parties[0],parties[1])
+            combat.doCombat(stdscr)
+            for _party in parties:
+                if len(_party.getPartyMembers()) == 0:
+                    self.parties.remove(_party)
+                    self.world.removeObject(_party,_party.getCoordinates()[0],_party.getCoordinates()[1])
 
     def printWorld(self):
         """prints the world"""

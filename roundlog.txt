@@ -1,14 +1,1 @@
-Paris Espinosa's turn  --> (9,7)
-Paris Espinosa's turn  ATK Louie Hanson
--TO HIT: 6 VS 8 EVASION Failed
-Kingston Buck's turn  --> (10,8)
-Adley Bautista's turn  --> (10,6)
-Jones Schultz's turn  --> (9,5)
-Livia Warren's turn  --> (11,5)
-Justice Bowman's turn  ATK Louie Hanson
--TO HIT: 8 VS 6 EVASION, Success, 5 DMG, 1 RESISTED
-Michelle Schroeder's turn  ATK Khalid Larson
--TO HIT: 10 VS 10 EVASION Failed
-Khalid Larson's turn  ATK Michelle Schroeder
--TO HIT: 9 VS 7 EVASION, Success, 5 DMG, 1 RESISTED
-Samir Hudson's turn 
+Keily Villanueva's turn Emmanuel Greene's turn Mohamed Hunt's turn Whitney Walsh's turn Landen Lowery's turn David Rowland's turn Seven Booth's turn Briella Santana's turn Carolyn Kerr's turn Paris Espinosa's turn Carolyn Kerr's turn 

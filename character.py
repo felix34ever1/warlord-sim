@@ -74,7 +74,14 @@ class Character():
     def getHP(self)->int:
         """Returns the character HP, likely used to check if enemy has died"""
         return self.hp
+    
+    def mDistanceToCharacter(self,char:'Character')->int: # The 'Character' typing definition uses single speech marks as they define a "forward reference" e.g tells the typing software that even though character isn't defined now, it will be later
+        """ Calculates the manhattan distance to another character"""
+        return abs(self.x-char.x)+abs(self.y-char.y)
 
 if __name__ == "__main__":
     ch = Character()
     print(ch.getName())
+    ch2 = Character()
+    ch2.setCoords(3,2)
+    print(ch.mDistanceToCharacter(ch2))
